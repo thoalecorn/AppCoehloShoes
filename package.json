@@ -1,0 +1,32 @@
+{
+  "name": "coelho-landing",
+  "version": "1.0.0",
+  "description": "Landing page premium para e-commerce de calzado Coelho",
+  "main": "index.html",
+  "scripts": {
+    "dev": "live-server --port=8000 --open=index.html",
+    "build": "npm run minify-css && npm run minify-js",
+    "minify-css": "cssnano css/styles.css css/styles.min.css && cssnano css/animations.css css/animations.min.css",
+    "minify-js": "terser js/main.js -o js/main.min.js && terser js/animations.js -o js/animations.min.js && terser js/cart.js -o js/cart.min.js",
+    "optimize-images": "imagemin assets/images/**/* --out-dir=assets/images/optimized"
+  },
+  "keywords": [
+    "landing-page",
+    "e-commerce",
+    "shoes",
+    "coelho",
+    "tailwind",
+    "javascript"
+  ],
+  "author": "Thom",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "cssnano": "^6.0.1",
+    "terser": "^5.19.2",
+    "imagemin": "^8.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

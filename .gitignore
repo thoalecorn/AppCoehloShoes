@@ -1,0 +1,64 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency Directories
+node_modules/
+bower_components/
+
+# Build Files
+dist/
+build/
+*.min.js
+*.min.css
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.bak
+*.cache
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Package Manager Lock Files (optional)
+# package-lock.json
+# yarn.lock
+
+# Testing
+coverage/
+.nyc_output/
+*.test.js
+*.spec.js
+
+# Documentation (if auto-generated)
+docs/_build/
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Backups
+backup/
+*.backup
