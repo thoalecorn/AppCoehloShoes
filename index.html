@@ -7,7 +7,6 @@
     <meta name="keywords" content="zapatos, calzado, coelho, elegancia, moda">
     <meta name="author" content="Coelho">
     
-    <!-- Open Graph / Social Media -->
     <meta property="og:title" content="Coelho - Calzado de Alta Calidad">
     <meta property="og:description" content="Elegancia y comodidad en cada paso">
     <meta property="og:type" content="website">
@@ -17,10 +16,8 @@
 
     <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/IcoBunnyBlack1.png">
 
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="./components/app.js"></script>
 
     <script>
         tailwind.config = {
@@ -42,7 +39,6 @@
 </head>
 <body class="bg-coelho-light">
     
-    <!-- Navigation -->
     <nav class="fixed w-full top-0 z-50 transition-all duration-300" id="navbar">
         <div class="container mx-auto px-6 py-3">
             <div class="flex items-center justify-between">
@@ -99,7 +95,7 @@
                     </p>
                     <div class="flex flex-wrap gap-4">
                         <a
-                            href="#productos"
+                            href="#products"
                             class="btn-primary px-8 py-4 rounded-none font-semibold inline-flex items-center gap-2"
                         >
                             <span>Explorar Colección</span>
@@ -109,32 +105,31 @@
                 </div>
                 
                 <!-- Hero Image -->
-<div class="slide-in-right relative">
-  <div class="relative">
-    
-    <!-- Glow dorado -->
-    <div class="absolute inset-0 bg-coelho-gold/20 blur-3xl"></div>
-
-    <!-- Marco principal -->
-    <div class="relative bg-gradient-to-br from-gray-800 to-gray-900 
-                rounded-2xl p-6 shadow-2xl border border-coelho-gold/20">
-
-      <!-- Contenedor de imagen -->
-      <div class="relative h-96 flex items-center justify-center 
-                  bg-gradient-to-br from-gray-900 to-black 
-                  rounded-xl overflow-hidden">
-        <img 
-          src="./assets/images/Pot1Shoes.png"
-          alt="Shoe Coelho"
-          class="max-w-[90%] max-h-[90%] object-contain 
-                 transition-transform duration-500 hover:scale-105"
-        >
-      </div>
-    </div>
-  </div>
-</div>
-
+        <div class="slide-in-right relative">
+            <div class="relative">
+                <div class="absolute inset-0 bg-coelho-gold/20 blur-3xl"></div>
+                <div class="relative bg-gradient-to-br from-gray-800 to-gray-900
+                        rounded-2xl p-6 shadow-2xl border border-coelho-gold/20">
+            <div class="relative h-96 bg-gradient-to-br from-gray-900 to-black
+                        rounded-xl overflow-hidden">
+                <video
+                autoplay
+                loop
+                muted
+                playsinline
+                class="w-full h-full object-cover"
+                >
+                <source src="https://res.cloudinary.com/df49yfhlh/video/upload/v1773381866/COELHO_INTRO_emumlh.mp4" type="video/mp4">
+                <!-- Fallback si el navegador no soporta video -->
+                <img
+                    src="./assets/images/Pot1Shoes.png"
+                    alt="Coelho Calzado"
+                    class="w-full h-full object-cover"
+                >
+                </video>
             </div>
+            </div>
+        </div>
         </div>
     </section>
     
@@ -160,7 +155,6 @@
                     <p class="text-coelho-gray mb-4">Un diseño limpio que combina con tu rutina laboral.</p>
                 </div>
                 
-                <!-- Category 2: Formales -->
                 <div class="category-card bg-gradient-to-br from-gray-50 to-gray-100 rounded-none p-8 text-center fade-in group" style="transition-delay: 0.1s;">
                     <div class="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-gray-200 group-hover:border-coelho-gold transition">
                         <i class="fa-solid fa-book-journal-whills text-3xl text-coelho-gray group-hover:text-coelho-gold transition"></i>
@@ -169,7 +163,6 @@
                     <p class="text-coelho-gray mb-4">Comodidad para caminar, moverte y estar activo todo el día.</p>
                 </div>
                 
-                <!-- Category 3: Casuales -->
                 <div class="category-card bg-gradient-to-br from-gray-50 to-gray-100 rounded-none p-8 text-center fade-in group" style="transition-delay: 0.2s;">
                     <div class="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-gray-200 group-hover:border-coelho-gold transition">
                         <i class="fas fa-walking text-3xl text-coelho-gray group-hover:text-coelho-gold transition"></i>
@@ -178,7 +171,6 @@
                     <p class="text-coelho-gray mb-4">El toque deportivo justo para verte bien sin exagerar.</p>
                 </div>
                 
-                <!-- Category 4: Outdoor -->
                 <div class="category-card bg-gradient-to-br from-gray-50 to-gray-100 rounded-none p-8 text-center fade-in group" style="transition-delay: 0.3s;">
                     <div class="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-gray-200 group-hover:border-coelho-gold transition">
                         <i class="fa-solid fa-tree-city text-3xl text-coelho-gray group-hover:text-coelho-gold transition"></i>
@@ -190,98 +182,89 @@
         </div>
     </section>
 
-
-
-<!--Bien aqui tengo que realizar una correccion para poder iterarar las Cards y dejarlas como un componente podria ser -->
-
     <!-- Featured Products Section -->
-<section id="products" class="py-20 bg-coelho-light">
-  <div class="container mx-auto px-6">
+    <section id="products" class="py-20 bg-coelho-light">
+      <div class="container mx-auto px-6">
 
-    <div class="text-center mb-16 fade-in">
-      <div class="flex items-center justify-center space-x-2 mb-4">
-        <div class="h-px w-12 bg-coelho-gold"></div>
-        <span class="text-coelho-gold text-sm font-semibold tracking-wider uppercase">
-          Zapatos
-        </span>
-        <div class="h-px w-12 bg-coelho-gold"></div>
+        <div class="text-center mb-16 fade-in">
+          <div class="flex items-center justify-center space-x-2 mb-4">
+            <div class="h-px w-12 bg-coelho-gold"></div>
+            <span class="text-coelho-gold text-sm font-semibold tracking-wider uppercase">
+              Zapatos
+            </span>
+            <div class="h-px w-12 bg-coelho-gold"></div>
+          </div>
+
+          <h2 class="hero-title text-4xl md:text-5xl font-bold text-coelho-dark mb-4">
+            Modelos pensados para el día a día
+          </h2>
+        </div>
+
+        <div
+            id="productos"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+        >
+          <div class="col-span-full flex flex-col items-center justify-center py-20">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-coelho-gold mb-4"></div>
+            <p class="text-coelho-gray text-lg">Cargando productos...</p>
+          </div>
+        </div>
+
       </div>
+    </section>
 
-      <h2 class="hero-title text-4xl md:text-5xl font-bold text-coelho-dark mb-4">
-        Modelos pensados para el día a día
-      </h2>
-    </div>
-
-    <!-- CONTENEDOR DINÁMICO -->
-    <div
-        id="productos"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-    ></div>
-
-    <div class="text-center mt-12">
-      <button class="btn-primary px-8 py-4 rounded-none font-semibold inline-flex items-center gap-2">
-        <span>Ver Catálogo Completo</span>
-        <i class="fas fa-arrow-right"></i>
-      </button>
-    </div>
-
-  </div>
-</section>
-
-
-<!-- Footer -->
-<footer id="contacto" class="bg-coelho-dark text-white py-8 border-t border-coelho-gold/20">
-    <div class="container mx-auto px-6">
-        
-        <!-- Contenido principal del footer -->
-        <div class="flex flex-col md:flex-row justify-between items-center md:items-start gap-8 mb-8">
+    <!-- Footer -->
+    <footer id="contacto" class="bg-coelho-dark text-white py-8 border-t border-coelho-gold/20">
+        <div class="container mx-auto px-6">
             
-            <!-- Logo y descripción -->
-            <div class="text-center md:text-left max-w-md">
-                <img src="./assets/images/CoelhoRemove.png" alt="Coelho Logo" class="h-10 mb-3 mx-auto md:mx-0">
-                <p class="text-gray-400 text-sm leading-relaxed">
-                    Calzado de alta calidad que define tu estilo. Elegancia y comodidad en cada paso.
-                </p>
+            <div class="flex flex-col md:flex-row justify-between items-center md:items-start gap-8 mb-8">
+                
+                <div class="text-center md:text-left max-w-md">
+                    <img src="./assets/images/CoelhoRemove.png" alt="Coelho Logo" class="h-10 mb-3 mx-auto md:mx-0">
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Calzado de alta calidad que define tu estilo. Elegancia y comodidad en cada paso.
+                    </p>
+                </div>
+                
+                <div class="flex flex-col items-center md:items-end">
+                    <span class="text-gray-400 text-sm mb-3 font-medium">Síguenos</span>
+                    <div class="flex space-x-3">
+                        <a href="#" class="w-9 h-9 bg-gray-800 flex items-center justify-center hover:bg-coelho-gold transition border border-gray-700 hover:border-coelho-gold" aria-label="Facebook">
+                            <i class="fab fa-facebook-f text-sm"></i>
+                        </a>
+                        <a href="https://www.instagram.com/coelholifeisgood/" class="w-9 h-9 bg-gray-800 flex items-center justify-center hover:bg-coelho-gold transition border border-gray-700 hover:border-coelho-gold" aria-label="Instagram">
+                            <i class="fab fa-instagram text-sm"></i>
+                        </a>
+                        <a href="https://wa.me/573118983733" class="w-9 h-9 bg-gray-800 flex items-center justify-center hover:bg-coelho-gold transition border border-gray-700 hover:border-coelho-gold" aria-label="WhatsApp">
+                            <i class="fab fa-whatsapp text-sm"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
             
-            <!-- Redes sociales -->
-            <div class="flex flex-col items-center md:items-end">
-                <span class="text-gray-400 text-sm mb-3 font-medium">Síguenos</span>
-                <div class="flex space-x-3">
-                    <a href="#" class="w-9 h-9 bg-gray-800 flex items-center justify-center hover:bg-coelho-gold transition border border-gray-700 hover:border-coelho-gold" aria-label="Facebook">
-                        <i class="fab fa-facebook-f text-sm"></i>
-                    </a>
-                    <a href="https://www.instagram.com/coelholifeisgood/" class="w-9 h-9 bg-gray-800 flex items-center justify-center hover:bg-coelho-gold transition border border-gray-700 hover:border-coelho-gold" aria-label="Instagram">
-                        <i class="fab fa-instagram text-sm"></i>
-                    </a>
-                    <a href="https://wa.me/573118983733" class="w-9 h-9 bg-gray-800 flex items-center justify-center hover:bg-coelho-gold transition border border-gray-700 hover:border-coelho-gold" aria-label="WhatsApp">
-                        <i class="fab fa-whatsapp text-sm"></i>
-                    </a>
+            <div class="border-t border-gray-800 pt-6 flex flex-col md:flex-row justify-between items-center text-sm">
+                <p class="text-gray-500 mb-3 md:mb-0">
+                    © 2026 <span class="text-coelho-gold font-semibold">Coelho</span>. Todos los derechos reservados.
+                </p>
+                <div class="flex space-x-2">
+                    <p class="text-gray-500 hover:text-coelho-gold transition">By</p>
+                    <span class="text-gray-700">•</span>
+                    <p class="text-gray-500 hover:text-coelho-gold transition">IngThoomz</p>
                 </div>
             </div>
         </div>
-        
-        <!-- Línea divisoria y copyright -->
-        <div class="border-t border-gray-800 pt-6 flex flex-col md:flex-row justify-between items-center text-sm">
-            <p class="text-gray-500 mb-3 md:mb-0">
-                © 2026 <span class="text-coelho-gold font-semibold">Coelho</span>. Todos los derechos reservados.
-            </p>
-            <div class="flex space-x-2">
-                <p class="text-gray-500 hover:text-coelho-gold transition">By</p>
-                <span class="text-gray-700">•</span>
-                <p class="text-gray-500 hover:text-coelho-gold transition">IngThoomz</p>
-            </div>
-        </div>
-    </div>
-</footer>
+    </footer>
     
     <button id="scrollTop" class="fixed bottom-8 right-8 bg-coelho-gold text-white w-12 h-12 rounded-none shadow-lg hover:bg-coelho-dark transition opacity-0 pointer-events-none z-50 border border-coelho-gold" aria-label="Volver arriba">
         <i class="fas fa-arrow-up"></i>
     </button>
     
-    <!-- JavaScript Files -->
-    <script src="./js/main.js"></script>
-    <script src="./js/animations.js"></script>
-    <script src="./js/cart.js"></script>
+<script src="./js/config-storefront.js"></script>
+<script src="./js/shopify-storefront.js"></script>
+<script src="./js/cart.js"></script>     
+<script src="./components/app.js"></script>
+<script src="./js/main.js"></script>
+<script src="./js/animations.js"></script>
+<script src="./js/card.js"></script>
 </body>
 </html>
