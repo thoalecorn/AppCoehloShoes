@@ -1,6 +1,4 @@
 'use strict';
-
-
 const CONFIG = {
     scrollOffset: 80,
     scrollTopThreshold: 300,
@@ -10,9 +8,6 @@ const CONFIG = {
 };
 
 const Utils = {
-    /**
-     * Debounce function to limit function calls
-     */
     debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -25,9 +20,6 @@ const Utils = {
         };
     },
 
-    /**
-     * Check if element is in viewport
-     */
     isInViewport(element) {
         const rect = element.getBoundingClientRect();
         return (
@@ -37,10 +29,6 @@ const Utils = {
             rect.right <= (window.innerWidth || document.documentElement.clientWidth)
         );
     },
-
-    /**
-     * Smooth scroll to element
-     */
     smoothScrollTo(element, offset = CONFIG.scrollOffset) {
         const elementPosition = element.offsetTop - offset;
         window.scrollTo({
@@ -93,7 +81,6 @@ const Navigation = {
     setupMobileMenu() {
         if (this.menuBtn) {
             this.menuBtn.addEventListener('click', () => {
-                // Implementar menú móvil según necesidades
                 alert('Menú móvil - Por implementar según diseño específico');
             });
         }
@@ -205,9 +192,6 @@ const Newsletter = {
         this.form.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = this.form.querySelector('input[type="email"]').value;
-            
-            // Aquí implementarías la lógica real de suscripción
-            console.log('Email suscrito:', email);
             alert(`¡Gracias por suscribirte! Te enviaremos un correo a: ${email}`);
             this.form.reset();
         });
@@ -215,15 +199,11 @@ const Newsletter = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('✨ Coelho - Premium Footwear Experience');
-    
     Navigation.init();
     ScrollToTop.init();
     Parallax.init();
     CursorGlow.init();
     Newsletter.init();
-    
-    console.log('✓ Core functionality loaded');
 });
 
 if (typeof module !== 'undefined' && module.exports) {
