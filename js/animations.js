@@ -30,6 +30,36 @@ const ScrollReveal = {
         elements.forEach(el => {
             this.observer.observe(el);
         });
+        this.observeProductCards();
+    },
+    observeProductCards() {
+        const productsContainer = document.getElementById('productos');
+        
+        if (!productsContainer) return;
+        const mutationObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1 && node.classList && node.classList.contains('product-card')) {
+                        setTimeout(() => {
+                            node.classList.add('active');
+                        }, 50);
+                    }
+                });
+            });
+        });
+
+        mutationObserver.observe(productsContainer, {
+            childList: true,
+            subtree: false
+        });
+
+        setTimeout(() => {
+            document.querySelectorAll('.product-card').forEach(card => {
+                if (!card.classList.contains('active')) {
+                    card.classList.add('active');
+                }
+            });
+        }, 100);
     }
 };
 
@@ -127,6 +157,7 @@ const TiltEffect = {
         card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
     }
 };
+
 const LazyLoad = {
     observer: null,
 
