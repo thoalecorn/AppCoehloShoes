@@ -21,8 +21,6 @@ function ProductCard({ id, titulo, precio, descripcion, imagenes }) {
           <span class="text-xl font-bold text-coelho-gold">
             $${precio.toLocaleString('es-CO')}
           </span>
-
-          <!--  Botón directo en la card — stopPropagation evita abrir el modal -->
           <button
             class="btn-add-cart bg-coelho-gold hover:bg-coelho-dark text-white
                    text-xs font-bold px-4 py-2 uppercase tracking-wider transition-colors duration-200
@@ -42,8 +40,43 @@ function ProductModal(producto) {
   const {
     id, titulo, precio, descripcionDetallada,
     color, colores, tallas, tallaSeleccionada,
-    sku, referencia, imagenes
+    sku, referencia, imagenes,
+    videos = [] 
   } = producto;
+  const thumbnailsHTML = [
+    ...imagenes.map((img, index) => `
+      <button
+        class="thumbnail-btn aspect-square bg-gray-100 overflow-hidden border-2
+               ${index === 0 ? 'border-coelho-gold' : 'border-transparent'}
+               hover:border-coelho-gold transition"
+        onclick="changeMainImage('img', '${img}', event)"
+      >
+        <img
+          src="${img}"
+          alt="Vista ${index + 1}"
+          class="w-full h-full object-contain"
+          onerror="this.src='./assets/images/placeholder.png'"
+        >
+      </button>
+    `),
+    ...videos.map((video, index) => `
+      <button
+        class="thumbnail-btn aspect-square bg-gray-900 overflow-hidden border-2
+               border-transparent hover:border-coelho-gold transition relative"
+        onclick="changeMainImage('video', '${video.src}', event, '${video.poster || ''}')"
+      >
+        ${video.poster
+          ? `<img src="${video.poster}" alt="Video ${index + 1}" class="w-full h-full object-cover opacity-80">`
+          : `<div class="w-full h-full bg-gray-800"></div>`
+        }
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-8 h-8 bg-coelho-gold rounded-full flex items-center justify-center shadow-lg">
+            <i class="fas fa-play text-white text-xs ml-0.5"></i>
+          </div>
+        </div>
+      </button>
+    `)
+  ].join('');
 
   return `
     <div
@@ -69,36 +102,33 @@ function ProductModal(producto) {
 
           <!-- GALERÍA -->
           <div class="space-y-4">
-            <div class="relative bg-gray-100 aspect-square overflow-hidden">
+
+            <div class="relative bg-gray-100 overflow-hidden" style="aspect-ratio: 16/9;">
+
+              <!-- Imagen principal (visible por defecto) -->
               <img
                 id="mainImage"
                 src="${imagenes[0]}"
                 alt="${titulo}"
-                class="w-full h-full object-cover"
+                class="w-full h-full object-contain"
                 onerror="this.src='./assets/images/placeholder.png'"
               />
+              <video
+                id="mainVideo"
+                class="w-full h-full object-contain hidden"
+                controls
+                playsinline
+              >
+                <source src="" type="video/mp4">
+              </video>
             </div>
+
+            <!-- Miniaturas: imágenes + videos -->
             <div class="grid grid-cols-4 gap-2">
-              ${imagenes.map((img, index) => `
-                <button
-                  class="thumbnail-btn aspect-square bg-gray-100 overflow-hidden border-2
-                         ${index === 0 ? 'border-coelho-gold' : 'border-transparent'}
-                         hover:border-coelho-gold transition"
-                  onclick="changeMainImage('${img}', event)"
-                >
-                  <img
-                    src="${img}"
-                    alt="Vista ${index + 1}"
-                    class="w-full h-full object-cover"
-                    onerror="this.src='./assets/images/placeholder.png'"
-                  >
-                </button>
-              `).join('')}
+              ${thumbnailsHTML}
             </div>
           </div>
-
           <div class="space-y-6">
-
             <div class="text-sm text-gray-500">SKU: ${sku}</div>
 
             <div>
@@ -108,25 +138,26 @@ function ProductModal(producto) {
               </div>
             </div>
 
-            <!-- Color -->
-            <div>
-              <div class="text-sm font-semibold text-coelho-dark mb-2 uppercase">
-                Color: ${color}
-              </div>
-              ${colores.length > 1 ? `
-                <div class="flex flex-wrap gap-2">
-                  ${colores.map(colorOption => `
-                    <button
-                      class="color-btn px-4 py-2 border font-medium transition
-                             ${colorOption === color
-                               ? 'bg-black text-white border-black'
-                               : 'border-gray-300 hover:border-coelho-gold'}"
-                      onclick="selectColor('${colorOption}', event)"
-                    >${colorOption}</button>
-                  `).join('')}
+            ${colores.length > 1 || (colores.length === 1 && color !== 'Color único') ? `
+              <div>
+                <div class="text-sm font-semibold text-coelho-dark mb-2 uppercase">
+                  Color: <span id="color-label">${color}</span>
                 </div>
-              ` : ''}
-            </div>
+                ${colores.length > 1 ? `
+                  <div class="flex flex-wrap gap-2">
+                    ${colores.map(colorOption => `
+                      <button
+                        class="color-btn px-4 py-2 border font-medium transition
+                               ${colorOption === color
+                                 ? 'bg-black text-white border-black'
+                                 : 'border-gray-300 hover:border-coelho-gold'}"
+                        onclick="selectColor('${colorOption}', event)"
+                      >${colorOption}</button>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            ` : ''}
 
             <!-- Talla -->
             <div>
@@ -171,7 +202,6 @@ function ProductModal(producto) {
                 </button>
               </div>
 
-              <!--onclick corregido — llama a addToCartFromModal() -->
               <button
                 id="btn-add-modal"
                 class="flex-1 bg-coelho-gold text-white px-8 py-3 font-bold
@@ -189,7 +219,7 @@ function ProductModal(producto) {
               <h3 class="text-lg font-bold text-coelho-dark mb-3">Descripción</h3>
               <p class="text-gray-600 leading-relaxed">${descripcionDetallada}</p>
             </div>
-            
+
             ${producto.shopifyData?.tags ? `
               <div class="pt-4 border-t">
                 <div class="flex flex-wrap gap-2">
@@ -211,7 +241,7 @@ function ProductModal(producto) {
 
 function openProductModal(productId) {
   const producto = ProductManagerStorefront.getProductById(productId);
-  if (!producto) { console.error('Producto no encontrado:', productId); return; }
+  if (!producto) return;
 
   document.body.insertAdjacentHTML('beforeend', ProductModal(producto));
 
@@ -226,18 +256,37 @@ function openProductModal(productId) {
 function closeProductModal() {
   const modal = document.getElementById('productModal');
   if (!modal) return;
+  const video = document.getElementById('mainVideo');
+  if (video) video.pause();
+
   modal.classList.add('opacity-0');
   modal.querySelector('.bg-white').classList.add('scale-95');
   setTimeout(() => { modal.remove(); document.body.style.overflow = ''; }, 300);
 }
 
-function changeMainImage(src, event) {
-  document.getElementById('mainImage').src = src;
+function changeMainImage(type, src, event, poster = '') {
+  const mainImage = document.getElementById('mainImage');
+  const mainVideo = document.getElementById('mainVideo');
+
   document.querySelectorAll('.thumbnail-btn').forEach(btn => {
     btn.classList.remove('border-coelho-gold');
     btn.classList.add('border-transparent');
   });
   event.currentTarget.classList.replace('border-transparent', 'border-coelho-gold');
+
+  if (type === 'video') {
+    mainImage.classList.add('hidden');
+    mainVideo.classList.remove('hidden');
+    mainVideo.src = src;
+    if (poster) mainVideo.poster = poster;
+    mainVideo.load();
+    mainVideo.play().catch(() => {}); 
+  } else {
+    mainVideo.pause();
+    mainVideo.classList.add('hidden');
+    mainImage.classList.remove('hidden');
+    mainImage.src = src;
+  }
 }
 
 function selectColor(color, event) {
@@ -299,7 +348,6 @@ async function addToCartFromModal(event) {
     CoelhoCart.openDrawer();
   } catch (err) {
     CoelhoCart.showToast('Error al agregar. Intenta de nuevo.');
-    console.error('addToCartFromModal error:', err);
   } finally {
     btn.disabled = false;
     btn.innerHTML = originalHTML;
@@ -311,11 +359,8 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('App.js inicializado');
   if (typeof ProductManagerStorefront !== 'undefined') {
     ProductManagerStorefront.init();
-  } else {
-    console.error('ProductManagerStorefront no disponible. Verifica que shopify-storefront.js esté cargado.');
   }
 });
 
