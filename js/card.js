@@ -23,10 +23,11 @@ const Card = {
     } else {
       const talla = tallaSeleccionada || product.tallaSeleccionada;
       variant = variants.find(v =>
-        v.selectedOptions.some(opt =>
-          ['talla', 'size', 'tamaño'].includes(opt.name.toLowerCase()) &&
-          opt.value === talla
-        )
+        v.selectedOptions.some(opt => {
+          const name = opt.name.toLowerCase();
+          const matchesName = name.includes('talla') || name.includes('size') || name.includes('tamaño');
+          return matchesName && opt.value === talla;
+        })
       );
       if (!variant) variant = variants.find(v => v.availableForSale) || variants[0];
     }
