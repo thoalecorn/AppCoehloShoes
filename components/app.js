@@ -69,12 +69,13 @@ function ProductModal(producto) {
 
           <!-- GALERÍA -->
           <div class="space-y-4">
-            <div class="relative bg-gray-100 aspect-square overflow-hidden">
-              <img
-                id="mainImage"
-                src="${imagenes[0]}"
+            <div class="relative bg-gray-100 overflow-hidden"
+                style="aspect-ratio: 16/9;">
+              <img 
+                id="mainImage" 
+                src="${imagenes[0]}" 
                 alt="${titulo}"
-                class="w-full h-full object-cover"
+                class="w-full h-full object-contain"
                 onerror="this.src='./assets/images/placeholder.png'"
               />
             </div>
