@@ -179,7 +179,6 @@ const Newsletter = {
         this.form.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = this.form.querySelector('input[type="email"]').value;
-            console.log('Email suscrito:', email);
             alert(`¡Gracias por suscribirte! Te enviaremos un correo a: ${email}`);
             this.form.reset();
         });
@@ -192,8 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
     Parallax.init();
     CursorGlow.init();
     Newsletter.init();
-    
-    console.log('✓ Core functionality loaded');
 });
 
 if (typeof module !== 'undefined' && module.exports) {

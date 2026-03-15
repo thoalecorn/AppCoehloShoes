@@ -242,8 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
     CounterAnimation.init();
     //TiltEffect.init();
     LazyLoad.init();
-    
-    console.log('✓ Animations loaded');
 });
 
 if (typeof module !== 'undefined' && module.exports) {
