@@ -6,14 +6,12 @@ const Card = {
   },
 
   storageKey: 'coelho_card',
+
   async init() {
-    if (!window.CoelhoCart) {
-      console.warn('CoelhoCart no está disponible. Asegúrate de cargar cart.js antes de card.js');
-      return;
-    }
+    if (!window.CoelhoCart) return;
     await CoelhoCart.init();
-    console.log(' Card → CoelhoCart inicializado');
   },
+
   async addItem(product, tallaSeleccionada) {
     if (!window.CoelhoCart) return;
 
@@ -45,10 +43,12 @@ const Card = {
     await CoelhoCart.addItem(variant.id, 1);
     CoelhoCart.openDrawer();
   },
+
   async removeItem(lineId) {
     if (!window.CoelhoCart) return;
     await CoelhoCart.removeItem(lineId);
   },
+
   updateBadge() {
     if (window.CoelhoCart) CoelhoCart._renderBadge();
   },
@@ -66,6 +66,7 @@ const Card = {
     const lineIds = CoelhoCart.state.lines.map(l => l.id);
     lineIds.forEach(id => CoelhoCart.removeItem(id));
   },
+
   loadFromStorage() {},
   saveToStorage()  {},
 };
@@ -83,8 +84,7 @@ const Wishlist = {
     if (stored) {
       try {
         this.items = new Set(JSON.parse(stored));
-      } catch (e) {
-        console.error('Error loading wishlist:', e);
+      } catch {
         this.items = new Set();
       }
     }
@@ -110,27 +110,20 @@ const Wishlist = {
 
 const QuickView = {
   modal: null,
-  init() {
-    // Placeholder para futura implementación
-  },
+  init() {},
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await Card.init();  
+  await Card.init();
   Wishlist.init();
   QuickView.init();
-
-  console.log('Card functionality loaded');
 });
 
 window.addToCart = async function (e, productId, tallaSeleccionada) {
   e.stopPropagation();
 
   const producto = window.ProductManagerStorefront?.getProductById(productId);
-  if (!producto) {
-    console.warn('Producto no encontrado:', productId);
-    return;
-  }
+  if (!producto) return;
 
   const btn = e.currentTarget;
   const originalHTML = btn.innerHTML;
@@ -139,9 +132,8 @@ window.addToCart = async function (e, productId, tallaSeleccionada) {
 
   try {
     await Card.addItem(producto, tallaSeleccionada);
-  } catch (err) {
+  } catch {
     if (window.CoelhoCart) CoelhoCart.showToast('Error al agregar. Intenta de nuevo.');
-    console.error('addToCart error:', err);
   } finally {
     btn.disabled = false;
     btn.innerHTML = originalHTML;

@@ -1,283 +1,383 @@
 'use strict';
-const Cart = {
-    items: [],
-    badge: null,
-    storageKey: 'coelho_cart',
 
-    init() {
-        this.badge = document.querySelector('nav .fa-shopping-cart + span');
-        this.loadFromStorage();
-        this.setupAddToCartButtons();
-        this.setupWishlistButtons();
-        this.updateBadge();
-    },
+// ─────────────────────────────────────────────
+//  CoelhoCart — Carrito conectado a Shopify
+//  Storefront API (GraphQL Cart API)
+// ─────────────────────────────────────────────
 
-    loadFromStorage() {
-        const stored = localStorage.getItem(this.storageKey);
-        if (stored) {
-            try {
-                this.items = JSON.parse(stored);
-            } catch (e) {
-                console.error('Error loading cart:', e);
-                this.items = [];
-            }
+const CoelhoCart = {
+  state: {
+    cartId:      null,
+    checkoutUrl: null,
+    lines:       [],
+    totalAmount: 0,
+    currencyCode: 'COP',
+  },
+
+  // ─── Persistencia ────────────────────────
+  saveState() {
+    localStorage.setItem('coelho_cart_id',      this.state.cartId || '');
+    localStorage.setItem('coelho_checkout_url', this.state.checkoutUrl || '');
+  },
+
+  loadState() {
+    this.state.cartId      = localStorage.getItem('coelho_cart_id')      || null;
+    this.state.checkoutUrl = localStorage.getItem('coelho_checkout_url') || null;
+  },
+
+  // ─── Mutations ───────────────────────────
+
+  async createCart() {
+    const mutation = `
+      mutation cartCreate {
+        cartCreate {
+          cart {
+            id checkoutUrl
+            lines(first: 100) { edges { node { id quantity merchandise { ... on ProductVariant { id title price { amount currencyCode } product { title images(first:1){ edges { node { url } } } } } } } } }
+            cost { totalAmount { amount currencyCode } }
+          }
+          userErrors { field message }
         }
-    },
+      }
+    `;
+    const data = await ShopifyStorefrontClient.graphql(mutation);
+    this._applyCart(data.cartCreate.cart);
+    this.saveState();
+    return data.cartCreate.cart;
+  },
 
-    saveToStorage() {
-        localStorage.setItem(this.storageKey, JSON.stringify(this.items));
-    },
-
-    addItem(product) {
-        const existingItem = this.items.find(item => item.id === product.id);
-        
-        if (existingItem) {
-            existingItem.quantity += 1;
-        } else {
-            this.items.push({
-                ...product,
-                quantity: 1
-            });
+  async fetchCart() {
+    if (!this.state.cartId) return null;
+    const query = `
+      query getCart($cartId: ID!) {
+        cart(id: $cartId) {
+          id checkoutUrl
+          lines(first: 100) { edges { node { id quantity merchandise { ... on ProductVariant { id title price { amount currencyCode } product { title images(first:1){ edges { node { url } } } } } } } } }
+          cost { totalAmount { amount currencyCode } }
         }
-        
-        this.saveToStorage();
-        this.updateBadge();
-    },
-
-    removeItem(productId) {
-        this.items = this.items.filter(item => item.id !== productId);
-        this.saveToStorage();
-        this.updateBadge();
-    },
-
-    updateBadge() {
-        if (!this.badge) return;
-        
-        const totalItems = this.items.reduce((sum, item) => sum + item.quantity, 0);
-        this.badge.textContent = totalItems;
-        
-        if (totalItems > 0) {
-            this.badge.classList.add('animate-pulse');
-            setTimeout(() => {
-                this.badge.classList.remove('animate-pulse');
-            }, 1000);
-        }
-    },
-
-    getTotalPrice() {
-        return this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    },
-
-    getItemCount() {
-        return this.items.reduce((sum, item) => sum + item.quantity, 0);
-    },
-
-    clear() {
-        this.items = [];
-        this.saveToStorage();
-        this.updateBadge();
+      }
+    `;
+    try {
+      const data = await ShopifyStorefrontClient.graphql(query, { cartId: this.state.cartId });
+      if (data.cart) { this._applyCart(data.cart); return data.cart; }
+    } catch {
+      this.state.cartId = null;
     }
+    return null;
+  },
+
+  async addItem(variantId, quantity = 1) {
+    if (!this.state.cartId) await this.createCart();
+
+    const mutation = `
+      mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
+        cartLinesAdd(cartId: $cartId, lines: $lines) {
+          cart {
+            id checkoutUrl
+            lines(first: 100) { edges { node { id quantity merchandise { ... on ProductVariant { id title price { amount currencyCode } product { title images(first:1){ edges { node { url } } } } } } } } }
+            cost { totalAmount { amount currencyCode } }
+          }
+          userErrors { field message }
+        }
+      }
+    `;
+
+    let data;
+    try {
+      data = await ShopifyStorefrontClient.graphql(mutation, {
+        cartId: this.state.cartId,
+        lines: [{ merchandiseId: variantId, quantity }],
+      });
+    } catch (err) {
+      const msg = err.message?.toLowerCase() || '';
+      if (msg.includes('no existe') || msg.includes('not found') || msg.includes('invalid')) {
+        this.state.cartId      = null;
+        this.state.checkoutUrl = null;
+        localStorage.removeItem('coelho_cart_id');
+        localStorage.removeItem('coelho_checkout_url');
+        await this.createCart();
+        data = await ShopifyStorefrontClient.graphql(mutation, {
+          cartId: this.state.cartId,
+          lines: [{ merchandiseId: variantId, quantity }],
+        });
+      } else {
+        throw err;
+      }
+    }
+
+    const errors = data.cartLinesAdd.userErrors;
+    if (errors.length) throw new Error(errors[0].message);
+
+    this._applyCart(data.cartLinesAdd.cart);
+    this.saveState();
+    this.render();
+    this.showToast('¡Producto agregado al carrito!');
+  },
+
+  async updateItem(lineId, quantity) {
+    const mutation = `
+      mutation cartLinesUpdate($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
+        cartLinesUpdate(cartId: $cartId, lines: $lines) {
+          cart {
+            id checkoutUrl
+            lines(first: 100) { edges { node { id quantity merchandise { ... on ProductVariant { id title price { amount currencyCode } product { title images(first:1){ edges { node { url } } } } } } } } }
+            cost { totalAmount { amount currencyCode } }
+          }
+          userErrors { field message }
+        }
+      }
+    `;
+    const data = await ShopifyStorefrontClient.graphql(mutation, {
+      cartId: this.state.cartId,
+      lines: [{ id: lineId, quantity }],
+    });
+    this._applyCart(data.cartLinesUpdate.cart);
+    this.render();
+  },
+
+  async removeItem(lineId) {
+    const mutation = `
+      mutation cartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
+        cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
+          cart {
+            id checkoutUrl
+            lines(first: 100) { edges { node { id quantity merchandise { ... on ProductVariant { id title price { amount currencyCode } product { title images(first:1){ edges { node { url } } } } } } } } }
+            cost { totalAmount { amount currencyCode } }
+          }
+          userErrors { field message }
+        }
+      }
+    `;
+    const data = await ShopifyStorefrontClient.graphql(mutation, {
+      cartId: this.state.cartId,
+      lineIds: [lineId],
+    });
+    this._applyCart(data.cartLinesRemove.cart);
+    this.render();
+  },
+
+  goToCheckout() {
+    if (!this.state.checkoutUrl) return;
+    window.location.href = this.state.checkoutUrl;
+  },
+
+  // ─── Helpers ─────────────────────────────
+
+  _applyCart(cart) {
+    this.state.cartId       = cart.id;
+    this.state.checkoutUrl  = cart.checkoutUrl;
+    this.state.lines        = cart.lines.edges.map(e => e.node);
+    this.state.totalAmount  = parseFloat(cart.cost.totalAmount.amount);
+    this.state.currencyCode = cart.cost.totalAmount.currencyCode;
+  },
+
+  get itemCount() {
+    return this.state.lines.reduce((sum, l) => sum + l.quantity, 0);
+  },
+
+  formatPrice(amount, currency) {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: currency || this.state.currencyCode,
+      minimumFractionDigits: 0,
+    }).format(amount);
+  },
+
+  // ─── Init ────────────────────────────────
+
+  async init() {
+    this.loadState();
+    this._injectDrawer();
+    this._bindGlobalEvents();
+    if (this.state.cartId) await this.fetchCart();
+    this.render();
+  },
+
+  // ─── Drawer ──────────────────────────────
+
+  _injectDrawer() {
+    if (document.getElementById('cart-drawer')) return;
+
+    const drawer = document.createElement('div');
+    drawer.id = 'cart-drawer';
+    drawer.innerHTML = `
+      <div id="cart-overlay"
+           class="fixed inset-0 bg-black/60 z-[60] opacity-0 pointer-events-none transition-opacity duration-300"
+           onclick="CoelhoCart.closeDrawer()">
+      </div>
+
+      <aside id="cart-panel"
+             class="fixed top-0 right-0 h-full w-full max-w-md bg-[#1a1a1a] z-[70]
+                    flex flex-col shadow-2xl translate-x-full transition-transform duration-300 ease-in-out">
+
+        <div class="flex items-center justify-between px-6 py-5 border-b border-white/10">
+          <div class="flex items-center gap-3">
+            <i class="fas fa-shopping-cart text-coelho-gold text-lg"></i>
+            <h2 class="text-white font-bold text-lg tracking-wide">Tu Carrito</h2>
+            <span id="cart-count-badge"
+                  class="bg-coelho-gold text-white text-xs font-bold rounded-full w-5 h-5
+                         flex items-center justify-center">0</span>
+          </div>
+          <button onclick="CoelhoCart.closeDrawer()"
+                  class="text-gray-400 hover:text-white transition w-8 h-8 flex items-center justify-center">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <div id="cart-items" class="flex-1 overflow-y-auto px-6 py-4 space-y-4"></div>
+
+        <div id="cart-footer" class="px-6 py-5 border-t border-white/10 bg-[#111]">
+          <div class="flex justify-between items-center mb-4">
+            <span class="text-gray-400 text-sm uppercase tracking-wider">Total</span>
+            <span id="cart-total" class="text-white font-bold text-xl">$0</span>
+          </div>
+          <button id="btn-checkout"
+                  onclick="CoelhoCart.goToCheckout()"
+                  class="w-full bg-coelho-gold hover:bg-yellow-600 text-white font-bold py-4
+                         tracking-widest uppercase text-sm transition-colors duration-200
+                         flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span>Ir a Pagar</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
+          <p class="text-gray-500 text-xs text-center mt-3">
+            Serás redirigido al checkout seguro de Shopify
+          </p>
+        </div>
+      </aside>
+
+      <div id="cart-toast"
+           class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[80]
+                  bg-coelho-gold text-white text-sm font-semibold px-5 py-3
+                  opacity-0 pointer-events-none transition-all duration-300 shadow-xl
+                  flex items-center gap-2">
+        <i class="fas fa-check-circle"></i>
+        <span id="cart-toast-msg"></span>
+      </div>
+    `;
+    document.body.appendChild(drawer);
+  },
+
+  _bindGlobalEvents() {
+    document.querySelectorAll('[aria-label="Carrito de compras"]').forEach(btn => {
+      btn.addEventListener('click', () => this.openDrawer());
+    });
+  },
+
+  openDrawer() {
+    document.getElementById('cart-overlay').classList.remove('opacity-0', 'pointer-events-none');
+    document.getElementById('cart-overlay').classList.add('opacity-100');
+    document.getElementById('cart-panel').classList.remove('translate-x-full');
+    document.body.style.overflow = 'hidden';
+  },
+
+  closeDrawer() {
+    document.getElementById('cart-overlay').classList.add('opacity-0', 'pointer-events-none');
+    document.getElementById('cart-overlay').classList.remove('opacity-100');
+    document.getElementById('cart-panel').classList.add('translate-x-full');
+    document.body.style.overflow = '';
+  },
+
+  showToast(msg) {
+    const toast = document.getElementById('cart-toast');
+    document.getElementById('cart-toast-msg').textContent = msg;
+    toast.classList.remove('opacity-0');
+    toast.classList.add('opacity-100');
+    setTimeout(() => {
+      toast.classList.add('opacity-0');
+      toast.classList.remove('opacity-100');
+    }, 2800);
+  },
+
+  // ─── Render ──────────────────────────────
+
+  render() {
+    this._renderItems();
+    this._renderTotal();
+    this._renderBadge();
+  },
+
+  _renderBadge() {
+    const count = this.itemCount;
+    document.querySelectorAll('[aria-label="Carrito de compras"] span').forEach(el => {
+      el.textContent = count;
+    });
+    const badge = document.getElementById('cart-count-badge');
+    if (badge) badge.textContent = count;
+  },
+
+  _renderTotal() {
+    const el = document.getElementById('cart-total');
+    if (el) el.textContent = this.formatPrice(this.state.totalAmount);
+    const btn = document.getElementById('btn-checkout');
+    if (btn) btn.disabled = this.state.lines.length === 0;
+  },
+
+  _renderItems() {
+    const container = document.getElementById('cart-items');
+    if (!container) return;
+
+    if (this.state.lines.length === 0) {
+      container.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-full py-16 text-center">
+          <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+            <i class="fas fa-shopping-bag text-coelho-gold text-2xl"></i>
+          </div>
+          <p class="text-gray-400 text-sm">Tu carrito está vacío</p>
+          <button onclick="CoelhoCart.closeDrawer()"
+                  class="mt-4 text-coelho-gold text-sm underline hover:text-yellow-400 transition">
+            Seguir explorando
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = this.state.lines.map(line => {
+      const merch    = line.merchandise;
+      const img      = merch.product.images.edges[0]?.node.url || './assets/images/placeholder.png';
+      const price    = parseFloat(merch.price.amount);
+      const currency = merch.price.currencyCode;
+
+      return `
+        <div class="flex gap-4 bg-white/5 p-3 border border-white/10 group relative">
+          <div class="w-20 h-20 bg-black flex-shrink-0 overflow-hidden">
+            <img src="${img}" alt="${merch.product.title}"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-white text-sm font-semibold truncate">${merch.product.title}</p>
+            <p class="text-gray-400 text-xs mb-2">${merch.title !== 'Default Title' ? merch.title : ''}</p>
+            <p class="text-coelho-gold text-sm font-bold">${this.formatPrice(price, currency)}</p>
+            <div class="flex items-center gap-2 mt-2">
+              <button onclick="CoelhoCart._changeQty('${line.id}', ${line.quantity - 1})"
+                      class="w-6 h-6 bg-white/10 hover:bg-white/20 text-white text-xs flex items-center justify-center transition">
+                <i class="fas fa-minus"></i>
+              </button>
+              <span class="text-white text-sm w-4 text-center">${line.quantity}</span>
+              <button onclick="CoelhoCart._changeQty('${line.id}', ${line.quantity + 1})"
+                      class="w-6 h-6 bg-white/10 hover:bg-white/20 text-white text-xs flex items-center justify-center transition">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-col items-end justify-between">
+            <button onclick="CoelhoCart.removeItem('${line.id}')"
+                    class="text-gray-500 hover:text-red-400 transition text-xs">
+              <i class="fas fa-trash"></i>
+            </button>
+            <p class="text-white text-xs font-semibold">
+              ${this.formatPrice(price * line.quantity, currency)}
+            </p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  async _changeQty(lineId, newQty) {
+    if (newQty <= 0) await this.removeItem(lineId);
+    else await this.updateItem(lineId, newQty);
+  },
 };
 
-const AddToCartAnimation = {
-    setupAddToCartButtons() {
-        document.querySelectorAll('.product-card button').forEach(btn => {
-            if (!btn.querySelector('.fa-shopping-cart')) return;
-            
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.animateAddToCart(btn);
-                
-                // Extract product info (you'd get this from data attributes in real implementation)
-                const productCard = btn.closest('.product-card');
-                const product = this.extractProductInfo(productCard);
-                
-                if (product) {
-                    Cart.addItem(product);
-                }
-            });
-        });
-    },
-
-    extractProductInfo(card) {
-        return {
-            id: Date.now(),
-            name: card.querySelector('h3')?.textContent || 'Producto',
-            price: 196000,
-            image: '/assets/images/product-placeholder.jpg'
-        };
-    },
-
-    animateAddToCart(button) {
-        const rect = button.getBoundingClientRect();
-        const icon = this.createFlyingIcon(rect.left, rect.top);
-        
-        document.body.appendChild(icon);
-        
-        requestAnimationFrame(() => {
-            setTimeout(() => {
-                this.flyToCart(icon);
-            }, 10);
-        });
-    },
-
-    createFlyingIcon(left, top) {
-        const icon = document.createElement('i');
-        icon.className = 'fas fa-shopping-cart';
-        icon.style.cssText = `
-            position: fixed;
-            left: ${left}px;
-            top: ${top}px;
-            font-size: 24px;
-            color: #C9A86A;
-            z-index: 9999;
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
-        `;
-        return icon;
-    },
-
-    flyToCart(icon) {
-        const navCart = document.querySelector('nav .fa-shopping-cart');
-        const rect = navCart.getBoundingClientRect();
-        
-        icon.style.left = rect.left + 'px';
-        icon.style.top = rect.top + 'px';
-        icon.style.transform = 'scale(0)';
-        icon.style.opacity = '0';
-        
-        setTimeout(() => {
-            icon.remove();
-            this.animateBadge();
-        }, 800);
-    },
-
-    animateBadge() {
-        const badge = document.querySelector('nav .fa-shopping-cart + span');
-        if (!badge) return;
-        
-        badge.style.transform = 'scale(1.3)';
-        badge.style.background = '#C9A86A';
-        
-        setTimeout(() => {
-            badge.style.transform = 'scale(1)';
-        }, 200);
-    }
-};
-const Wishlist = {
-    items: new Set(),
-    storageKey: 'coelho_wishlist',
-
-    init() {
-        this.loadFromStorage();
-        this.setupWishlistButtons();
-    },
-
-    loadFromStorage() {
-        const stored = localStorage.getItem(this.storageKey);
-        if (stored) {
-            try {
-                this.items = new Set(JSON.parse(stored));
-            } catch (e) {
-                console.error('Error loading wishlist:', e);
-                this.items = new Set();
-            }
-        }
-    },
-
-    saveToStorage() {
-        localStorage.setItem(this.storageKey, JSON.stringify([...this.items]));
-    },
-
-    toggle(productId) {
-        if (this.items.has(productId)) {
-            this.items.delete(productId);
-        } else {
-            this.items.add(productId);
-        }
-        this.saveToStorage();
-    },
-
-    has(productId) {
-        return this.items.has(productId);
-    },
-
-    setupWishlistButtons() {
-        document.querySelectorAll('.fa-heart').forEach(heart => {
-            const button = heart.parentElement;
-            
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.animateToggle(button);
-            });
-        });
-    },
-
-    animateToggle(button) {
-        const icon = button.querySelector('i');
-        
-        if (icon.classList.contains('far')) {
-            icon.classList.remove('far');
-            icon.classList.add('fas');
-            button.style.background = '#C9A86A';
-            button.style.borderColor = '#C9A86A';
-            
-            icon.style.transform = 'scale(1.3)';
-            setTimeout(() => {
-                icon.style.transform = 'scale(1)';
-            }, 200);
-        } else {
-            icon.classList.remove('fas');
-            icon.classList.add('far');
-            button.style.background = 'white';
-            button.style.borderColor = '#e5e7eb';
-        }
-    }
-};
-
-const QuickView = {
-    modal: null,
-
-    init() {
-        this.setupQuickViewButtons();
-    },
-
-    setupQuickViewButtons() {
-        document.querySelectorAll('[data-quick-view]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const productId = btn.getAttribute('data-quick-view');
-                this.showModal(productId);
-            });
-        });
-    },
-
-    showModal(productId) {
-        // Implementar modal de vista rápida
-        console.log('Quick view for product:', productId);
-        alert('Vista rápida - Por implementar');
-    },
-
-    hideModal() {
-        if (this.modal) {
-            this.modal.classList.add('hidden');
-        }
-    }
-};
-document.addEventListener('DOMContentLoaded', () => {
-    Cart.init();
-    Wishlist.init();
-    QuickView.init();
-    AddToCartAnimation.setupAddToCartButtons();
-    
-    console.log('✓ Cart functionality loaded');
-});
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        Cart,
-        AddToCartAnimation,
-        Wishlist,
-        QuickView
-    };
-}
+window.CoelhoCart = CoelhoCart;
