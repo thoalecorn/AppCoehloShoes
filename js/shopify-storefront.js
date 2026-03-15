@@ -60,11 +60,17 @@ const ShopifyStorefrontClient = {
                   currencyCode
                 }
               }
-              images(first: 10) {
+              media(first: 10) {
                 edges {
                   node {
-                    url
-                    altText
+                    mediaContentType
+                    ... on MediaImage {
+                      image { url altText }
+                    }
+                    ... on Video {
+                      sources { url mimeType }
+                      previewImage { url }
+                    }
                   }
                 }
               }
@@ -114,11 +120,17 @@ const ShopifyStorefrontClient = {
               currencyCode
             }
           }
-          images(first: 10) {
+          media(first: 10) {
             edges {
               node {
-                url
-                altText
+                mediaContentType
+                ... on MediaImage {
+                  image { url altText }
+                }
+                ... on Video {
+                  sources { url mimeType }
+                  previewImage { url }
+                }
               }
             }
           }
@@ -155,7 +167,20 @@ const StorefrontTransformer = {
 
     const numericId = this.extractNumericId(shopifyProduct.id);
     const precio = parseFloat(shopifyProduct.priceRange.minVariantPrice.amount);
-    const imagenes = shopifyProduct.images.edges.map(edge => edge.node.url);
+    const imagenes = [];
+    const videos = [];
+
+    shopifyProduct.media.edges.forEach(({ node }) => {
+      if (node.mediaContentType === 'IMAGE') {
+        imagenes.push(node.image.url);
+      } else if (node.mediaContentType === 'VIDEO') {
+        videos.push({
+          src: node.sources.find(s => s.mimeType === 'video/mp4')?.url || node.sources[0].url,
+          poster: node.previewImage?.url || null,
+        });
+      }
+    });
+
     const variants = shopifyProduct.variants.edges.map(edge => edge.node);
 
     const coloresSet = new Set();
@@ -189,18 +214,19 @@ const StorefrontTransformer = {
       descripcionDetallada: shopifyProduct.description || 'Producto de alta calidad Coelho.',
       color: colorPrincipal,
       colores: colores.length > 0 ? colores : [colorPrincipal],
-      tallas: tallas.length > 0  ? tallas : [tallaPrincipal],
+      tallas: tallas.length > 0  ? tallas  : [tallaPrincipal],
       tallaSeleccionada: tallaPrincipal,
       sku,
       referencia: `COELHO-${shopifyProduct.handle.toUpperCase()}`,
       imagenes: imagenes.length > 0 ? imagenes : ['./assets/images/placeholder.png'],
+      videos, 
       shopifyData: {
-        handle: shopifyProduct.handle,
-        vendor: shopifyProduct.vendor,
+        handle:      shopifyProduct.handle,
+        vendor:      shopifyProduct.vendor,
         productType: shopifyProduct.productType,
-        tags: shopifyProduct.tags.join(','),
+        tags:        shopifyProduct.tags.join(','),
         variants,
-        available: variants.some(v => v.availableForSale)
+        available:   variants.some(v => v.availableForSale)
       }
     };
   },
@@ -308,14 +334,14 @@ const ProductManagerStorefront = {
 
   filterProducts(criteria) {
     return this.productos.filter(producto => {
-      if (criteria.color && producto.color !== criteria.color) return false;
+      if (criteria.color && producto.color !== criteria.color)   return false;
       if (criteria.minPrice && producto.precio < criteria.minPrice) return false;
       if (criteria.maxPrice && producto.precio > criteria.maxPrice) return false;
-      if (criteria.talla && !producto.tallas.includes(criteria.talla)) return false;
+      if (criteria.talla && !producto.tallas.includes(criteria.talla))       return false;
       return true;
     });
   }
 };
 
 window.ProductManagerStorefront = ProductManagerStorefront;
-window.ShopifyStorefrontClient = ShopifyStorefrontClient;
+window.ShopifyStorefrontClient  = ShopifyStorefrontClient;
