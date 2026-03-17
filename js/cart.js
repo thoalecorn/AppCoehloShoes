@@ -227,17 +227,22 @@ const CoelhoCart = {
             <span class="text-gray-400 text-sm uppercase tracking-wider">Total</span>
             <span id="cart-total" class="text-white font-bold text-xl">$0</span>
           </div>
+
           <button id="btn-checkout"
                   onclick="CoelhoCart.goToCheckout()"
                   class="w-full bg-coelho-gold hover:bg-yellow-600 text-white font-bold py-4
-                         tracking-widest uppercase text-sm transition-colors duration-200
-                         flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-            <span>Ir a Pagar</span>
+                        tracking-widest uppercase text-sm transition-colors duration-200
+                        flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span>Proceder con la compra</span>
             <i class="fas fa-arrow-right"></i>
           </button>
-          <p class="text-gray-500 text-xs text-center mt-3">
-            Serás redirigido al checkout seguro de Shopify
-          </p>
+
+          <div class="flex items-center justify-center gap-2 mt-3">
+            <i class="fas fa-shield-alt text-coelho-gold text-xs"></i>
+            <p class="text-gray-400 text-xs">
+              Pago contra entrega — pagas al recibir tu pedido
+            </p>
+          </div>
         </div>
       </aside>
 
